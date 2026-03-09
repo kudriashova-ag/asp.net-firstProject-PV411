@@ -1,12 +1,18 @@
-using Microsoft.AspNetCore.Http;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using MyApp.Models;
+using Swashbuckle.AspNetCore.Annotations;
 
-namespace MyApp.Controllers;
+namespace MyApp.Controllers.V1;
 
-[Route("api/[controller]")]
+/// <summary>
+/// Операції з фільмами: перегляд, пошук, додавання, редагування та видалення кінематографічних творів
+/// </summary>
+[ApiVersion("1.0")]
+[Route("api/v{version:apiVersion}/[controller]")]
 [ApiController]
 [Produces("application/json")]
+[SwaggerTag("Операції з фільмами")]
 public class MovieController : ControllerBase
 {
     private static List<Movie> _movies = new()
@@ -16,19 +22,33 @@ public class MovieController : ControllerBase
         new Movie{Id=3, Title="The Dark Knight", Year=2008, Director="Christopher Nolan", Genre="Action"},
     };
 
+    /// <summary>
+    /// Повертає всі фільми
+    /// </summary>
+    /// <returns>Список фільмів</returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    // [ProducesResponseType(typeof(IEnumerable<Movie>), StatusCodes.Status200OK, "application/json")]
 
     public ActionResult<IEnumerable<Movie>> Get()
     {
         return Ok(_movies);
     }
 
+    /// <summary>
+    /// Повертає фільм за Id
+    /// </summary>
+    /// <param name="id">Ідентифікатор фільму</param>
+    /// <returns>Об'єкт Movie або помилка</returns>
+    /// <response code="200">Успішне отримання фільму</response>
+    /// <response code="400">Некоректний Id</response>
+    /// <response code="404">Фільм не знайдено</response>
+    /// <response code="500">Помилка сервера</response>
+    /// <remarks> Метод шукає фільм за Id, який передається як параметр.</remarks>
     [HttpGet("{id:int}")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status500InternalServerError)]
     public ActionResult<Movie> GetById(int id)
     {
         if (id <= 0)
@@ -46,10 +66,17 @@ public class MovieController : ControllerBase
         return Ok(movie);
     }
 
+
+    /// <summary>
+    /// Повертає фільм за назвою
+    /// </summary>
+    /// <param name="title"> Назва фільму </param>
+    /// <returns>Об'єкт Movie або помилка</returns>
     [HttpGet("search")]
     [ProducesResponseType(StatusCodes.Status200OK)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ApiExplorerSettings(IgnoreApi = true)]
     public ActionResult<Movie> GetByTitle([FromQuery] string title)
     {
         if (string.IsNullOrEmpty(title))
@@ -64,19 +91,18 @@ public class MovieController : ControllerBase
         return Ok(movie);
     }
 
+    /// <summary>
+    /// Створює новий фільм
+    /// </summary>
+    /// <param name="movie"> Об'єкт Movie </param>
+    /// <returns> Об'єкт Movie </returns>
     [HttpPost]
+    [Consumes("application/json")]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public ActionResult<Movie> Create([FromBody] Movie movie)
     {
-        // не використовується в проєктах
-        // if (movie.Genre.Length < 3)
-        // {
-        //     ModelState.AddModelError("Genre", "Genre must have min 3 characters");
-        //     return BadRequest(ModelState);
-        // }
-
         if (_movies.Any(m => m.Title == movie.Title))
         {
             return Conflict(new { error = "Movie already exists" });
@@ -92,10 +118,15 @@ public class MovieController : ControllerBase
         };
 
         _movies.Add(newMovie);
-        // return Created("/api/movie/" + newMovie.Id, newMovie);
         return CreatedAtAction(nameof(GetById), new { id = newMovie.Id }, newMovie);
     }
 
+    /// <summary>
+    /// Оновлює фільм
+    /// </summary>
+    /// <param name="id"> Ідентифікатор фільму</param>
+    /// <param name="movie"> Об'єкт Movie</param>
+    /// <returns> 204 NoContent або помилка</returns>
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
@@ -121,7 +152,11 @@ public class MovieController : ControllerBase
         return NoContent();
     }
 
-
+    /// <summary>
+    /// Видаляє фільм
+    /// </summary>
+    /// <param name="id"> Ідентифікатор фільму</param>
+    /// <returns> 204 NoContent або помилка</returns>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]

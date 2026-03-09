@@ -1,0 +1,12 @@
+Request: GET /
+Request: GET //products/%7Bid%7D
+Request: GET /products/1
+Request: GET /favicon.ico
+Request: GET /products
+Request: GET /products/fghfhf
+Request: GET /products/fghfhf
+Request: GET /favicon.ico
+Request: GET /products/fghfhf
+Request: GET /favicon.ico
+Request: GET /products/-1
+Request: GET /products/-1

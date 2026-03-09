@@ -5,6 +5,10 @@ namespace MyApp.Models;
 public class Movie
 {
     public int Id { get; set; }
+
+    /// <summary>
+    /// The title of the movie
+    /// </summary>
     [Required(ErrorMessage = "Title is required!")]
     [MinLength(3)]
     [MaxLength(50)]
