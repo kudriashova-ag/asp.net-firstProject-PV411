@@ -1,5 +1,7 @@
 using Asp.Versioning;
+using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using MyApp.DTOs.Movie;
 using MyApp.Models;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -15,6 +17,13 @@ namespace MyApp.Controllers.V1;
 [SwaggerTag("Операції з фільмами")]
 public class MovieController : ControllerBase
 {
+    private readonly IMapper _mapper;
+
+    public MovieController(IMapper mapper)
+    {
+        _mapper = mapper;
+    }
+
     private static List<Movie> _movies = new()
     {
         new Movie{Id=1, Title="The Shawshank Redemption", Year=1994, Director="Frank Darabont", Genre="Drama"},
@@ -29,9 +38,17 @@ public class MovieController : ControllerBase
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
 
-    public ActionResult<IEnumerable<Movie>> Get()
+    public ActionResult<IEnumerable<MovieSummaryDto>> Get()
     {
-        return Ok(_movies);
+        // var movieSummary = _movies.Select(m => new MovieSummaryDto
+        // {
+        //     Id = m.Id,
+        //     Title = m.Title
+        // });
+
+        var movieSummary = _mapper.Map<IEnumerable<MovieSummaryDto>>(_movies);
+
+        return Ok(movieSummary);
     }
 
     /// <summary>
@@ -49,7 +66,7 @@ public class MovieController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public ActionResult<Movie> GetById(int id)
+    public ActionResult<MovieDetailDto> GetById(int id)
     {
         if (id <= 0)
         {
@@ -63,7 +80,18 @@ public class MovieController : ControllerBase
             return NotFound(new { error = "Movie not found" });
         }
 
-        return Ok(movie);
+        // var movieDetail = new MovieDetailDto
+        // {
+        //     Id = movie.Id,
+        //     Title = movie.Title,
+        //     Year = movie.Year,
+        //     Director = movie.Director,
+        //     Genre = movie.Genre
+        // };
+
+        var movieDetail = _mapper.Map<MovieDetailDto>(movie);
+
+        return Ok(movieDetail);
     }
 
 
@@ -101,7 +129,7 @@ public class MovieController : ControllerBase
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<Movie> Create([FromBody] Movie movie)
+    public ActionResult<MovieDetailDto> Create([FromBody] CreateMovieRequest movie)
     {
         if (_movies.Any(m => m.Title == movie.Title))
         {
@@ -118,7 +146,20 @@ public class MovieController : ControllerBase
         };
 
         _movies.Add(newMovie);
-        return CreatedAtAction(nameof(GetById), new { id = newMovie.Id }, newMovie);
+
+        // var movieDetail = new MovieDetailDto
+        // {
+        //     Id = newMovie.Id,
+        //     Title = newMovie.Title,
+        //     Year = newMovie.Year,
+        //     Director = newMovie.Director,
+        //     Genre = newMovie.Genre
+        // };
+
+        var movieDetail = _mapper.Map<MovieDetailDto>(newMovie);
+
+
+        return CreatedAtAction(nameof(GetById), new { id = movieDetail.Id }, movieDetail);
     }
 
     /// <summary>
@@ -131,7 +172,7 @@ public class MovieController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public IActionResult Update(int id, [FromBody] Movie movie)
+    public IActionResult Update(int id, [FromBody] CreateMovieRequest movie)
     {
         if (id <= 0)
         {
@@ -144,10 +185,54 @@ public class MovieController : ControllerBase
             return NotFound(new { error = "Movie not found" });
         }
 
-        movieToUpdate.Title = movie.Title;
-        movieToUpdate.Year = movie.Year;
-        movieToUpdate.Genre = movie.Genre;
-        movieToUpdate.Director = movie.Director;
+        // movieToUpdate.Title = movie.Title;
+        // movieToUpdate.Year = movie.Year;
+        // movieToUpdate.Genre = movie.Genre;
+        // movieToUpdate.Director = movie.Director;
+
+        _mapper.Map(movie, movieToUpdate);
+
+        return NoContent();
+    }
+
+
+
+    /// <summary>
+    /// Оновлює фільм частково
+    /// </summary>
+    /// <param name="id"> Ідентифікатор фільму</param>
+    /// <param name="movie"> Об'єкт Movie</param>
+    /// <returns> 204 NoContent або помилка</returns>
+    [HttpPatch("{id:int}")]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    public IActionResult PartialUpdate(int id, [FromBody] UpdateMovieRequest movie)
+    {
+        if (id <= 0)
+        {
+            return BadRequest();
+        }
+        var movieToUpdate = _movies.FirstOrDefault(m => m.Id == id);
+
+        if (movieToUpdate == null)
+        {
+            return NotFound(new { error = "Movie not found" });
+        }
+
+        // if (movie.Title != null)
+        //     movieToUpdate.Title = movie.Title;
+
+        // if (movie.Year.HasValue)
+        //     movieToUpdate.Year = movie.Year.Value;
+
+        // if (movie.Genre != null)
+        //     movieToUpdate.Genre = movie.Genre;
+
+        // if (movie.Director != null)
+        //     movieToUpdate.Director = movie.Director;
+
+        _mapper.Map(movie, movieToUpdate);
 
         return NoContent();
     }
