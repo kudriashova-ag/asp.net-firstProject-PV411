@@ -24,7 +24,7 @@ public class MovieProfile : Profile
         CreateMap<CreateMovieRequest, Movie>();
 
         CreateMap<UpdateMovieRequest, Movie>()
-             .ForMember(dest => dest.Year, opts => opts.Condition((src, dest, srcMember) => src.Year.HasValue))    // !!!!!
+             .ForMember(dest => dest.Year, opts => opts.PreCondition((src, dest, srcMember) => src.Year.HasValue))    // !!!!!
              .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
 

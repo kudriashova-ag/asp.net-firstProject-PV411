@@ -220,18 +220,6 @@ public class MovieController : ControllerBase
             return NotFound(new { error = "Movie not found" });
         }
 
-        // if (movie.Title != null)
-        //     movieToUpdate.Title = movie.Title;
-
-        // if (movie.Year.HasValue)
-        //     movieToUpdate.Year = movie.Year.Value;
-
-        // if (movie.Genre != null)
-        //     movieToUpdate.Genre = movie.Genre;
-
-        // if (movie.Director != null)
-        //     movieToUpdate.Director = movie.Director;
-
         _mapper.Map(movie, movieToUpdate);
 
         return NoContent();
