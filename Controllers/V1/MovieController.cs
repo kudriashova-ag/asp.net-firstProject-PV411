@@ -1,6 +1,9 @@
+using System.Text;
 using Asp.Versioning;
 using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using MyApp.Data;
 using MyApp.DTOs.Movie;
 using MyApp.Models;
 using Swashbuckle.AspNetCore.Annotations;
@@ -18,35 +21,27 @@ namespace MyApp.Controllers.V1;
 public class MovieController : ControllerBase
 {
     private readonly IMapper _mapper;
+    private readonly AppDbContext _db;
 
-    public MovieController(IMapper mapper)
+    public MovieController(IMapper mapper, AppDbContext db)
     {
         _mapper = mapper;
+        _db = db;
     }
 
-    private static List<Movie> _movies = new()
-    {
-        new Movie{Id=1, Title="The Shawshank Redemption", Year=1994, Director="Frank Darabont", Genre="Drama"},
-        new Movie{Id=2, Title="The Godfather", Year=1972, Director="Francis Ford Coppola", Genre="Drama"},
-        new Movie{Id=3, Title="The Dark Knight", Year=2008, Director="Christopher Nolan", Genre="Action"},
-    };
 
     /// <summary>
     /// Повертає всі фільми
     /// </summary>
+    /// <param name="ct">CancellationToken</param>
     /// <returns>Список фільмів</returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
 
-    public ActionResult<IEnumerable<MovieSummaryDto>> Get()
+    public async Task<ActionResult<IEnumerable<MovieSummaryDto>>> Get(CancellationToken ct)
     {
-        // var movieSummary = _movies.Select(m => new MovieSummaryDto
-        // {
-        //     Id = m.Id,
-        //     Title = m.Title
-        // });
-
-        var movieSummary = _mapper.Map<IEnumerable<MovieSummaryDto>>(_movies);
+        var movies = await _db.Movies.AsNoTracking().ToListAsync(ct);
+        var movieSummary = _mapper.Map<IEnumerable<MovieSummaryDto>>(movies);
 
         return Ok(movieSummary);
     }
@@ -55,6 +50,7 @@ public class MovieController : ControllerBase
     /// Повертає фільм за Id
     /// </summary>
     /// <param name="id">Ідентифікатор фільму</param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns>Об'єкт Movie або помилка</returns>
     /// <response code="200">Успішне отримання фільму</response>
     /// <response code="400">Некоректний Id</response>
@@ -66,28 +62,19 @@ public class MovieController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status500InternalServerError)]
-    public ActionResult<MovieDetailDto> GetById(int id)
+    public async Task<ActionResult<MovieDetailDto>> GetById(int id, CancellationToken ct)
     {
         if (id <= 0)
         {
             return BadRequest(new { error = "Id must be greater than 0" });
         }
 
-        var movie = _movies.FirstOrDefault(m => m.Id == id);
+        var movie = await _db.Movies.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id, ct);
 
         if (movie == null)
         {
             return NotFound(new { error = "Movie not found" });
         }
-
-        // var movieDetail = new MovieDetailDto
-        // {
-        //     Id = movie.Id,
-        //     Title = movie.Title,
-        //     Year = movie.Year,
-        //     Director = movie.Director,
-        //     Genre = movie.Genre
-        // };
 
         var movieDetail = _mapper.Map<MovieDetailDto>(movie);
 
@@ -96,69 +83,23 @@ public class MovieController : ControllerBase
 
 
     /// <summary>
-    /// Повертає фільм за назвою
-    /// </summary>
-    /// <param name="title"> Назва фільму </param>
-    /// <returns>Об'єкт Movie або помилка</returns>
-    [HttpGet("search")]
-    [ProducesResponseType(StatusCodes.Status200OK)]
-    [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    [ProducesResponseType(StatusCodes.Status404NotFound)]
-    [ApiExplorerSettings(IgnoreApi = true)]
-    public ActionResult<Movie> GetByTitle([FromQuery] string title)
-    {
-        if (string.IsNullOrEmpty(title))
-        {
-            return BadRequest(new { error = "Title is required" });
-        }
-        var movie = _movies.FirstOrDefault(m => m.Title == title);
-        if (movie == null)
-        {
-            return NotFound(new { error = "Movie not found" });
-        }
-        return Ok(movie);
-    }
-
-    /// <summary>
     /// Створює новий фільм
     /// </summary>
     /// <param name="movie"> Об'єкт Movie </param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns> Об'єкт Movie </returns>
     [HttpPost]
-    [Consumes("application/json")]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public ActionResult<MovieDetailDto> Create([FromBody] CreateMovieRequest movie)
+    public async Task<ActionResult<MovieDetailDto>> Create([FromBody] CreateMovieRequest movie, CancellationToken ct)
     {
-        if (_movies.Any(m => m.Title == movie.Title))
-        {
-            return Conflict(new { error = "Movie already exists" });
-        }
+        var newMovie = _mapper.Map<Movie>(movie);
 
-        var newMovie = new Movie
-        {
-            Id = _movies.Max(m => m.Id) + 1,
-            Title = movie.Title,
-            Year = movie.Year,
-            Director = movie.Director,
-            Genre = movie.Genre
-        };
-
-        _movies.Add(newMovie);
-
-        // var movieDetail = new MovieDetailDto
-        // {
-        //     Id = newMovie.Id,
-        //     Title = newMovie.Title,
-        //     Year = newMovie.Year,
-        //     Director = newMovie.Director,
-        //     Genre = newMovie.Genre
-        // };
+        _db.Movies.Add(newMovie);
+        await _db.SaveChangesAsync(ct);
 
         var movieDetail = _mapper.Map<MovieDetailDto>(newMovie);
-
-
         return CreatedAtAction(nameof(GetById), new { id = movieDetail.Id }, movieDetail);
     }
 
@@ -167,30 +108,28 @@ public class MovieController : ControllerBase
     /// </summary>
     /// <param name="id"> Ідентифікатор фільму</param>
     /// <param name="movie"> Об'єкт Movie</param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns> 204 NoContent або помилка</returns>
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public IActionResult Update(int id, [FromBody] CreateMovieRequest movie)
+    public async Task<IActionResult> Update(int id, [FromBody] CreateMovieRequest movie, CancellationToken ct)
     {
         if (id <= 0)
         {
             return BadRequest();
         }
-        var movieToUpdate = _movies.FirstOrDefault(m => m.Id == id);
+        var movieToUpdate = await _db.Movies.FirstOrDefaultAsync(m => m.Id == id);
 
         if (movieToUpdate == null)
         {
             return NotFound(new { error = "Movie not found" });
         }
 
-        // movieToUpdate.Title = movie.Title;
-        // movieToUpdate.Year = movie.Year;
-        // movieToUpdate.Genre = movie.Genre;
-        // movieToUpdate.Director = movie.Director;
-
         _mapper.Map(movie, movieToUpdate);
+
+        await _db.SaveChangesAsync(ct);
 
         return NoContent();
     }
@@ -202,18 +141,19 @@ public class MovieController : ControllerBase
     /// </summary>
     /// <param name="id"> Ідентифікатор фільму</param>
     /// <param name="movie"> Об'єкт Movie</param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns> 204 NoContent або помилка</returns>
     [HttpPatch("{id:int}")]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public IActionResult PartialUpdate(int id, [FromBody] UpdateMovieRequest movie)
+    public async Task<IActionResult> PartialUpdate(int id, [FromBody] UpdateMovieRequest movie, CancellationToken ct)
     {
         if (id <= 0)
         {
             return BadRequest();
         }
-        var movieToUpdate = _movies.FirstOrDefault(m => m.Id == id);
+        var movieToUpdate = await _db.Movies.FirstOrDefaultAsync(m => m.Id == id);
 
         if (movieToUpdate == null)
         {
@@ -222,6 +162,8 @@ public class MovieController : ControllerBase
 
         _mapper.Map(movie, movieToUpdate);
 
+        await _db.SaveChangesAsync(ct);
+
         return NoContent();
     }
 
@@ -229,26 +171,29 @@ public class MovieController : ControllerBase
     /// Видаляє фільм
     /// </summary>
     /// <param name="id"> Ідентифікатор фільму</param>
+    /// <param name="ct">CancellationToken</param>
     /// <returns> 204 NoContent або помилка</returns>
     [HttpDelete("{id:int}")]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public IActionResult Delete(int id)
+    public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
         if (id <= 0)
         {
             return BadRequest(new { error = "Id must be greater than 0" });
         }
 
-        var movie = _movies.FirstOrDefault(m => m.Id == id);
+        var movie = await _db.Movies.FindAsync(id);
 
         if (movie == null)
         {
             return NotFound(new { error = "Movie not found" });
         }
 
-        _movies.Remove(movie);
+        _db.Movies.Remove(movie);
+
+        await _db.SaveChangesAsync(ct);
 
         return NoContent();
     }
