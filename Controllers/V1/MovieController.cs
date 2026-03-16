@@ -1,11 +1,7 @@
-using System.Text;
 using Asp.Versioning;
-using AutoMapper;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using MyApp.Data;
 using MyApp.DTOs.Movie;
-using MyApp.Models;
+using MyApp.Services;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace MyApp.Controllers.V1;
@@ -20,13 +16,12 @@ namespace MyApp.Controllers.V1;
 [SwaggerTag("Операції з фільмами")]
 public class MovieController : ControllerBase
 {
-    private readonly IMapper _mapper;
-    private readonly AppDbContext _db;
 
-    public MovieController(IMapper mapper, AppDbContext db)
+    private readonly IMovieService _movieService;
+
+    public MovieController(IMovieService movieService)
     {
-        _mapper = mapper;
-        _db = db;
+        _movieService = movieService;
     }
 
 
@@ -40,9 +35,7 @@ public class MovieController : ControllerBase
 
     public async Task<ActionResult<IEnumerable<MovieSummaryDto>>> Get(CancellationToken ct)
     {
-        var movies = await _db.Movies.AsNoTracking().ToListAsync(ct);
-        var movieSummary = _mapper.Map<IEnumerable<MovieSummaryDto>>(movies);
-
+        var movieSummary = await _movieService.GetAllMovies(ct);
         return Ok(movieSummary);
     }
 
@@ -69,16 +62,14 @@ public class MovieController : ControllerBase
             return BadRequest(new { error = "Id must be greater than 0" });
         }
 
-        var movie = await _db.Movies.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id, ct);
+        var movie = await _movieService.GetMovieById(id, ct);
 
         if (movie == null)
         {
             return NotFound(new { error = "Movie not found" });
         }
 
-        var movieDetail = _mapper.Map<MovieDetailDto>(movie);
-
-        return Ok(movieDetail);
+        return Ok(movie);
     }
 
 
@@ -94,13 +85,8 @@ public class MovieController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MovieDetailDto>> Create([FromBody] CreateMovieRequest movie, CancellationToken ct)
     {
-        var newMovie = _mapper.Map<Movie>(movie);
-
-        _db.Movies.Add(newMovie);
-        await _db.SaveChangesAsync(ct);
-
-        var movieDetail = _mapper.Map<MovieDetailDto>(newMovie);
-        return CreatedAtAction(nameof(GetById), new { id = movieDetail.Id }, movieDetail);
+        var newMovie = await _movieService.CreateMovie(movie, ct);
+        return CreatedAtAction(nameof(GetById), new { id = newMovie.Id }, newMovie);
     }
 
     /// <summary>
@@ -120,16 +106,12 @@ public class MovieController : ControllerBase
         {
             return BadRequest();
         }
-        var movieToUpdate = await _db.Movies.FirstOrDefaultAsync(m => m.Id == id);
+        var result = await _movieService.UpdateMovie(id, movie, ct);
 
-        if (movieToUpdate == null)
+        if (!result)
         {
             return NotFound(new { error = "Movie not found" });
         }
-
-        _mapper.Map(movie, movieToUpdate);
-
-        await _db.SaveChangesAsync(ct);
 
         return NoContent();
     }
@@ -153,16 +135,12 @@ public class MovieController : ControllerBase
         {
             return BadRequest();
         }
-        var movieToUpdate = await _db.Movies.FirstOrDefaultAsync(m => m.Id == id);
+        var result = await _movieService.PartialUpdateMovie(id, movie, ct);
 
-        if (movieToUpdate == null)
+        if (!result)
         {
             return NotFound(new { error = "Movie not found" });
         }
-
-        _mapper.Map(movie, movieToUpdate);
-
-        await _db.SaveChangesAsync(ct);
 
         return NoContent();
     }
@@ -184,16 +162,12 @@ public class MovieController : ControllerBase
             return BadRequest(new { error = "Id must be greater than 0" });
         }
 
-        var movie = await _db.Movies.FindAsync(id);
+        var result = await _movieService.DeleteMovie(id, ct);
 
-        if (movie == null)
+        if (!result)
         {
             return NotFound(new { error = "Movie not found" });
         }
-
-        _db.Movies.Remove(movie);
-
-        await _db.SaveChangesAsync(ct);
 
         return NoContent();
     }

@@ -4,12 +4,15 @@ using Asp.Versioning.ApiExplorer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi;
 using MyApp.Data;
+using MyApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
+
+builder.Services.AddScoped<IMovieService, MovieService>();
 
 builder.Services.AddAutoMapper(cfg=> { }, typeof(Program));
 
