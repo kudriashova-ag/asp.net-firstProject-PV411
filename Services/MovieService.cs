@@ -28,7 +28,11 @@ public class MovieService : IMovieService
 
     public async Task<MovieDetailDto> GetMovieById(int id, CancellationToken ct)
     {
-        var movie = await _db.Movies.AsNoTracking().FirstOrDefaultAsync(m => m.Id == id, ct);
+        var movie = await _db.Movies
+                .AsNoTracking()
+                .Include(m => m.Director)
+                .FirstOrDefaultAsync(m => m.Id == id, ct);
+
         var movieDetail = _mapper.Map<MovieDetailDto>(movie);
         return movieDetail;
     }
@@ -68,5 +72,5 @@ public class MovieService : IMovieService
         await _db.SaveChangesAsync(ct);
         return true;
     }
-    
+
 }

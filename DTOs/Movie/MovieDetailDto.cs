@@ -7,5 +7,5 @@ public class MovieDetailDto
     public string Title { get; set; } = null!;
     public string Genre { get; set; } = null!;
     public int Year { get; set; }
-    public string Director { get; set; } = null!;
+    public string? DirectorFullName { get; set; } = null!;
 }

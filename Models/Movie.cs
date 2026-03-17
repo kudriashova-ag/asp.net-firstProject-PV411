@@ -26,6 +26,7 @@ public class Movie
     public int Year { get; set; }
 
 
-    [Required]
-    public string Director { get; set; } = null!;
+    public int? DirectorId { get; set; }
+
+    public Director? Director { get; set; } // Navigation property
 }

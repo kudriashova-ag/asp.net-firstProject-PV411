@@ -15,9 +15,9 @@ public class MovieController : ControllerBase
 {
     private static List<Movie> _movies = new()
     {
-        new Movie{Id=1, Title="The Shawshank Redemption", Year=1994, Director="Frank Darabont", Genre="Drama"},
-        new Movie{Id=2, Title="The Godfather", Year=1972, Director="Francis Ford Coppola", Genre="Drama"},
-        new Movie{Id=3, Title="The Dark Knight", Year=2008, Director="Christopher Nolan", Genre="Action"},
+        new Movie{Id=1, Title="The Shawshank Redemption", Year=1994,  Genre="Drama"},
+        new Movie{Id=2, Title="The Godfather", Year=1972,  Genre="Drama"},
+        new Movie{Id=3, Title="The Dark Knight", Year=2008,  Genre="Action"},
     };
 
     /// <summary>

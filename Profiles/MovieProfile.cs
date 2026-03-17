@@ -10,14 +10,9 @@ public class MovieProfile : Profile
     {
         //        Source -> Target (destination)
         CreateMap<Movie, MovieDetailDto>()
-            .ForMember(dest => dest.Year, opts => opts.MapFrom(src => src.Year + 5))
-            .AfterMap((src, dest) =>
-            {
-                if (src.Year < 1950)
-                {
-                    dest.Genre = "Classic " + dest.Genre;
-                }
-            });
+            .ForMember(dest => dest.DirectorFullName, opts => opts.MapFrom(src => 
+                src.Director != null ? $"{ src.Director.FirstName } { src.Director.LastName }" : null
+            ));
 
         CreateMap<Movie, MovieSummaryDto>();
 
