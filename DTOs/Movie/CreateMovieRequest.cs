@@ -2,28 +2,22 @@ using System.ComponentModel.DataAnnotations;
 
 namespace MyApp.DTOs.Movie;
 
-public class CreateMovieRequest
-{
-    /// <summary>
-    /// The title of the movie
-    /// </summary>
+public record CreateMovieRequest
+(
     [Required(ErrorMessage = "Title is required!")]
     [MinLength(3)]
     [MaxLength(50)]
-    public string Title { get; set; } = null!;
-
-
+    string Title,
 
     [Required]
     [StringLength(20, MinimumLength = 3, ErrorMessage = "Length of {0} must be {2} - {1}")]
-    public string Genre { get; set; } = null!;
-
+    string Genre,
 
     [Required]
     [NotInFuture]
-    public int Year { get; set; }
+    int Year,
+
+    int? DirectorId
+);
 
 
-    [Required]
-    public string Director { get; set; } = null!;
-}

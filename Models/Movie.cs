@@ -25,8 +25,9 @@ public class Movie
     [NotInFuture]
     public int Year { get; set; }
 
-
     public int? DirectorId { get; set; }
-
     public Director? Director { get; set; } // Navigation property
+
+    public IEnumerable<MovieActor> MovieActors { get; set; } = new List<MovieActor>();
+    public IEnumerable<Actor> Actors { get; set; } = new List<Actor>();
 }

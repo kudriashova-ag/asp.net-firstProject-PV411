@@ -3,6 +3,9 @@ using MyApp.Data;
 using MyApp.DTOs.Movie;
 using Microsoft.EntityFrameworkCore;
 using MyApp.Models;
+using AutoMapper.QueryableExtensions;
+using MyApp.DTOs.Director;
+using MyApp.DTOs.Actor;
 
 
 namespace MyApp.Services;
@@ -26,15 +29,48 @@ public class MovieService : IMovieService
         return movieSummary;
     }
 
-    public async Task<MovieDetailDto> GetMovieById(int id, CancellationToken ct)
+    public async Task<MovieDetailDto?> GetMovieById(int id, CancellationToken ct)
     {
-        var movie = await _db.Movies
-                .AsNoTracking()
-                .Include(m => m.Director)
-                .FirstOrDefaultAsync(m => m.Id == id, ct);
 
-        var movieDetail = _mapper.Map<MovieDetailDto>(movie);
-        return movieDetail;
+        // 1 варіант
+        /*   var movie = await _db.Movies
+                  .AsNoTracking()
+                  .Include(m => m.Director)
+                  .FirstOrDefaultAsync(m => m.Id == id, ct);
+
+          var movieDetail = _mapper.Map<MovieDetailDto>(movie); 
+
+          return movieDetail; */
+
+        // 2 варіант
+        // return await _db.Movies
+        //         .AsNoTracking()
+        //         .Where(m => m.Id == id)
+        //         .ProjectTo<MovieDetailDto>(_mapper.ConfigurationProvider)
+        //         .FirstOrDefaultAsync(ct);
+
+        // 3 варіант
+        return await _db.Movies
+              .AsNoTracking()
+              .Where(m => m.Id == id)
+              .Select(m => new MovieDetailDto(
+                      m.Id,
+                      m.Title,
+                      m.Genre,
+                      m.Year,
+                      m.MovieActors.Select(ma =>
+                          new ActorInMovieDto(
+                              ma.Actor.Id,
+                              ma.Actor.FirstName,
+                              ma.Actor.LastName,
+                              ma.Role
+                          ))
+                          .ToList(),
+                      m.Director != null ?
+                          new DirectorDto(m.Director.Id, m.Director.FirstName, m.Director.LastName)
+                          : null
+              ))
+              .FirstOrDefaultAsync(ct);
     }
 
     public async Task<MovieDetailDto> CreateMovie(CreateMovieRequest movieRequest, CancellationToken ct)

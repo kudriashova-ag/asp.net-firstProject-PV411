@@ -1,4 +1,5 @@
 using AutoMapper;
+using MyApp.DTOs.Director;
 using MyApp.DTOs.Movie;
 using MyApp.Models;
 
@@ -8,11 +9,16 @@ public class MovieProfile : Profile
 {
     public MovieProfile()
     {
+        CreateMap<Director, DirectorDto>();
+
         //        Source -> Target (destination)
         CreateMap<Movie, MovieDetailDto>()
-            .ForMember(dest => dest.DirectorFullName, opts => opts.MapFrom(src => 
-                src.Director != null ? $"{ src.Director.FirstName } { src.Director.LastName }" : null
-            ));
+            .ForMember(dest => dest.Director, opts => opts.MapFrom(src => src.Director));
+
+
+        // .ForMember(dest => dest.DirectorFullName, opts => opts.MapFrom(src => 
+        //     src.Director != null ? $"{ src.Director.FirstName } { src.Director.LastName }" : null
+        // ));
 
         CreateMap<Movie, MovieSummaryDto>();
 

@@ -1,11 +1,15 @@
+using MyApp.DTOs.Actor;
+using MyApp.DTOs.Director;
+
 namespace MyApp.DTOs.Movie;
 
+public record MovieDetailDto
+(
+    int Id,
+    string Title,
+    string Genre,
+    int Year,
+    IEnumerable<ActorInMovieDto> Actors,
+    DirectorDto? Director = null
+);
 
-public class MovieDetailDto
-{
-    public int Id { get; set; }
-    public string Title { get; set; } = null!;
-    public string Genre { get; set; } = null!;
-    public int Year { get; set; }
-    public string? DirectorFullName { get; set; } = null!;
-}
