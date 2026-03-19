@@ -1,6 +1,8 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using MyApp.DTOs.Movie;
+using MyApp.Helpers.Pagination;
+using MyApp.Helpers.QueryParameters;
 using MyApp.Services;
 using Swashbuckle.AspNetCore.Annotations;
 
@@ -29,13 +31,14 @@ public class MovieController : ControllerBase
     /// Повертає всі фільми
     /// </summary>
     /// <param name="ct">CancellationToken</param>
+    /// <param name="parameters">Параметри пошуку</param>
     /// <returns>Список фільмів</returns>
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK)]
 
-    public async Task<ActionResult<IEnumerable<MovieSummaryDto>>> Get(CancellationToken ct)
+    public async Task<ActionResult<PagedResult<MovieSummaryDto>>> Get(CancellationToken ct, [FromQuery] MovieQueryParameters parameters)
     {
-        var movieSummary = await _movieService.GetAllMovies(ct);
+        var movieSummary = await _movieService.GetAllMovies(ct, parameters);
         return Ok(movieSummary);
     }
 

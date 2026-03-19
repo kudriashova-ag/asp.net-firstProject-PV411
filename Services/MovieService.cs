@@ -6,6 +6,8 @@ using MyApp.Models;
 using AutoMapper.QueryableExtensions;
 using MyApp.DTOs.Director;
 using MyApp.DTOs.Actor;
+using MyApp.Helpers.Pagination;
+using MyApp.Helpers.QueryParameters;
 
 
 namespace MyApp.Services;
@@ -21,12 +23,17 @@ public class MovieService : IMovieService
         _mapper = mapper;
     }
 
-    public async Task<IEnumerable<MovieSummaryDto>> GetAllMovies(CancellationToken ct)
+    public async Task<PagedResult<MovieSummaryDto>> GetAllMovies(CancellationToken ct, MovieQueryParameters parameters)
     {
-        var movies = await _db.Movies.AsNoTracking().ToListAsync(ct);
-        var movieSummary = _mapper.Map<IEnumerable<MovieSummaryDto>>(movies);
+        var query = _db.Movies.AsNoTracking().AsQueryable();
+        query = ApplyFilters(query, parameters.Search, parameters.Genre, parameters.MinYear, parameters.MaxYear);
+        query = ApplySorting(query, parameters.Sort);
 
-        return movieSummary;
+        return await query
+                .ToPagedResultAsync<Movie, MovieSummaryDto>(
+                    parameters.Page,
+                    parameters.Size,
+                    _mapper.ConfigurationProvider, ct);
     }
 
     public async Task<MovieDetailDto?> GetMovieById(int id, CancellationToken ct)
@@ -107,6 +114,43 @@ public class MovieService : IMovieService
         _db.Movies.Remove(movie);
         await _db.SaveChangesAsync(ct);
         return true;
+    }
+
+
+
+    private static IQueryable<Movie> ApplySorting(IQueryable<Movie> query, string? sort)
+    {
+        return sort switch
+        {
+            "title_asc" => query.OrderBy(m => m.Title),
+            "title_desc" => query.OrderByDescending(m => m.Title),
+            "year_asc" => query.OrderBy(m => m.Year),
+            "year_desc" => query.OrderByDescending(m => m.Year),
+            _ => query.OrderBy(m => m.Id)
+        };
+    }
+
+    private static IQueryable<Movie> ApplyFilters(
+        IQueryable<Movie> query,
+        string? search,
+        string? genre,
+        int? min_year,
+        int? max_year)
+    {
+
+        if (min_year.HasValue)
+            query = query.Where(m => m.Year >= min_year.Value);
+
+        if (max_year.HasValue)
+            query = query.Where(m => m.Year <= max_year.Value);
+
+        if (!string.IsNullOrWhiteSpace(genre))
+            query = query.Where(m => m.Genre == genre);
+
+        if (!string.IsNullOrWhiteSpace(search))
+            query = query.Where(m => EF.Functions.Like(m.Title, $"%{search.Trim()}%"));
+
+        return query;
     }
 
 }
