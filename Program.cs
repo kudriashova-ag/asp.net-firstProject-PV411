@@ -1,7 +1,9 @@
 using System.Reflection;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi;
 using MyApp.Data;
 using MyApp.Services;
@@ -13,8 +15,17 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 );
 
 builder.Services.AddScoped<IMovieService, MovieService>();
+builder.Services.AddScoped<FileService>();
 
-builder.Services.AddAutoMapper(cfg=> { }, typeof(Program));
+// обмеження розміру файлів для всього проєкту
+builder.Services.Configure<FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 5 * 1024 * 1024; // 5 MB
+});
+
+
+
+builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 
 builder.Services.AddApiVersioning(options =>
 {
@@ -22,7 +33,7 @@ builder.Services.AddApiVersioning(options =>
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
 })
-.AddApiExplorer(options=>
+.AddApiExplorer(options =>
 {
     options.GroupNameFormat = "'v'VVV";
     options.SubstituteApiVersionInUrl = true;
@@ -43,6 +54,15 @@ builder.Services.AddSwaggerGen(options =>
 // builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+app.UseStaticFiles(); // wwwroot
+
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
+    RequestPath = "/uploads"
+});
+
 
 
 if (app.Environment.IsDevelopment())
