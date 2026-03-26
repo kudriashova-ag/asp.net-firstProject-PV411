@@ -4,6 +4,7 @@ using MyApp.DTOs.Movie;
 using MyApp.Helpers.Pagination;
 using MyApp.Helpers.QueryParameters;
 using MyApp.Services;
+using MyApp.Validators.Movie;
 using Swashbuckle.AspNetCore.Annotations;
 
 namespace MyApp.Controllers.V1;
@@ -20,10 +21,12 @@ public class MovieController : ControllerBase
 {
 
     private readonly IMovieService _movieService;
+    private readonly CreateMovieRequestValidator _createMovieValidator;
 
-    public MovieController(IMovieService movieService)
+    public MovieController(IMovieService movieService, CreateMovieRequestValidator createMovieValidator)
     {
         _movieService = movieService;
+        _createMovieValidator = createMovieValidator;
     }
 
 
@@ -88,6 +91,17 @@ public class MovieController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MovieDetailDto>> Create([FromBody] CreateMovieRequest movie, CancellationToken ct)
     {
+        // var validationResult = _createMovieValidator.Validate(movie);
+        // if (!validationResult.IsValid)
+        // {
+        //     return ValidationProblem(
+        //         title: "Помилки валідації",
+        //         detail: "Один або декалька параметрів не валідні",
+        //         statusCode: StatusCodes.Status400BadRequest    
+        //     );
+        // }
+
+
         var newMovie = await _movieService.CreateMovie(movie, ct);
         return CreatedAtAction(nameof(GetById), new { id = newMovie.Id }, newMovie);
     }
@@ -160,18 +174,7 @@ public class MovieController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
-        if (id <= 0)
-        {
-            return BadRequest(new { error = "Id must be greater than 0" });
-        }
-
-        var result = await _movieService.DeleteMovie(id, ct);
-
-        if (!result)
-        {
-            return NotFound(new { error = "Movie not found" });
-        }
-
+        await _movieService.DeleteMovie(id, ct);
         return NoContent();
     }
 }

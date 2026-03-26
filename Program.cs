@@ -1,12 +1,17 @@
 using System.Reflection;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
+using FluentValidation;
+using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi;
 using MyApp.Data;
+using MyApp.Filters;
+using MyApp.Middleware;
 using MyApp.Services;
+using MyApp.Validators.Movie;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -17,13 +22,18 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<FileService>();
 
+// автоматична реєстрація ВСІХ валідаторів
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+// автоматична валідація
+// builder.Services.AddFluentValidationAutoValidation();
+
+//builder.Services.AddValidatorsFromAssemblyContaining<CreateMovieRequestValidator>(includeInternalTypes: true);
+
 // обмеження розміру файлів для всього проєкту
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 5 * 1024 * 1024; // 5 MB
 });
-
-
 
 builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 
@@ -40,7 +50,10 @@ builder.Services.AddApiVersioning(options =>
 });
 
 
-builder.Services.AddControllers();
+builder.Services.AddControllers(options=>
+{
+    options.Filters.Add<ValidationFilter>();
+});
 
 builder.Services.AddSwaggerGen(options =>
 {
@@ -51,9 +64,16 @@ builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "My API V1", Version = "v1" });
     options.SwaggerDoc("v2", new OpenApiInfo { Title = "My API V2", Version = "v2" });
 });
-// builder.Services.AddOpenApi();
 
 var app = builder.Build();
+
+app.UseMiddleware<ExceptionMiddleware>();
+
+// конфігурація для роботи з файлами  (wwwroot->index.html)
+app.UseDefaultFiles(new DefaultFilesOptions
+{
+    DefaultFileNames = new[] { "index.html" }
+});
 
 app.UseStaticFiles(); // wwwroot
 
@@ -68,7 +88,6 @@ app.UseStaticFiles(new StaticFileOptions
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    // app.MapOpenApi();
 
     app.UseSwaggerUI(options =>
     {
@@ -86,6 +105,8 @@ if (app.Environment.IsDevelopment())
 
 app.MapControllers();
 
+// ловимо всі не знайдені запити та повертаємо index.html
+app.MapFallbackToFile("index.html");
 
 app.Run();
 

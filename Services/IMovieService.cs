@@ -12,5 +12,6 @@ public interface IMovieService
     Task<bool> UpdateMovie(int id, CreateMovieRequest movie, CancellationToken ct);
     Task<bool> PartialUpdateMovie(int id, UpdateMovieRequest movie, CancellationToken ct);
     Task<bool> DeleteMovie(int id, CancellationToken ct);
+    Task<bool> DirectorExists(int? DirectorId, CancellationToken ct);
 
 }
