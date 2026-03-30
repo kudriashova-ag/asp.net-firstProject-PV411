@@ -10,5 +10,9 @@ public interface IMovieRepository
 
 
     Task AddMovieAsync(Movie movie, CancellationToken ct);
-    
+
+    Task<Movie?> GetByIdForUpdateAsync(int id, CancellationToken ct);
+    void RemoveMovieActors(ICollection<MovieActor> movieActors);
+
+    Task SaveChangesAsync(CancellationToken ct);
 }

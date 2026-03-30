@@ -40,4 +40,22 @@ public class MovieRepository : IMovieRepository
         await _db.SaveChangesAsync(ct);
     }
 
+    public async Task<Movie?> GetByIdForUpdateAsync(int id, CancellationToken ct)
+    {
+        return await _db.Movies
+                        .Where(m => m.Id == id)
+                        .Include(m => m.MovieActors)
+                        .FirstOrDefaultAsync(ct);
+    }
+
+    public void RemoveMovieActors(ICollection<MovieActor> movieActors)
+    {
+        _db.RemoveRange(movieActors);
+    }
+
+    public async Task SaveChangesAsync(CancellationToken ct)
+    {
+        await _db.SaveChangesAsync(ct);
+    }
+
 }

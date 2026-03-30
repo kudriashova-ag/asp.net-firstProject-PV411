@@ -63,10 +63,21 @@ public class MovieService : IMovieService
 
     public async Task<bool> UpdateMovie(int id, CreateMovieRequest movieRequest, CancellationToken ct)
     {
-        var movieToUpdate = await _db.Movies.FirstOrDefaultAsync(m => m.Id == id, ct);
+        var movieToUpdate = await _movieRepository.GetByIdForUpdateAsync(id, ct);
         if (movieToUpdate == null) return false;
+
         _mapper.Map(movieRequest, movieToUpdate);
-        await _db.SaveChangesAsync(ct);
+
+        _movieRepository.RemoveMovieActors(movieToUpdate.MovieActors);
+
+        movieToUpdate.MovieActors = movieRequest.Actors.Select(a => new MovieActor
+        {
+            ActorId = a.ActorId,
+            Role = a.Role,
+            MovieId = id
+        }).ToList();
+        
+        await _movieRepository.SaveChangesAsync(ct);
         return true;
     }
 
