@@ -10,5 +10,5 @@ public class Actor
 
     public IEnumerable<Movie> Movies { get; set; } = new List<Movie>();
 
-    public IEnumerable<MovieActor> MovieActors { get; set; } = new List<MovieActor>();
+    public ICollection<MovieActor> MovieActors { get; set; } = new List<MovieActor>();
 }

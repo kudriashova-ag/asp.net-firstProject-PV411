@@ -1,6 +1,7 @@
 using Asp.Versioning;
 using Microsoft.AspNetCore.Mvc;
 using MyApp.DTOs.Movie;
+using MyApp.Extensions;
 using MyApp.Helpers.Pagination;
 using MyApp.Helpers.QueryParameters;
 using MyApp.Services;
@@ -65,14 +66,14 @@ public class MovieController : ControllerBase
     {
         if (id <= 0)
         {
-            return BadRequest(new { error = "Id must be greater than 0" });
+            return this.BadRequestProblem("Id must be greater than 0");
         }
 
         var movie = await _movieService.GetMovieById(id, ct);
 
         if (movie == null)
         {
-            return NotFound(new { error = "Movie not found" });
+            return this.NotFoundProblem($"Movie with id {id} not found");
         }
 
         return Ok(movie);
@@ -91,18 +92,9 @@ public class MovieController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MovieDetailDto>> Create([FromBody] CreateMovieRequest movie, CancellationToken ct)
     {
-        // var validationResult = _createMovieValidator.Validate(movie);
-        // if (!validationResult.IsValid)
-        // {
-        //     return ValidationProblem(
-        //         title: "Помилки валідації",
-        //         detail: "Один або декалька параметрів не валідні",
-        //         statusCode: StatusCodes.Status400BadRequest    
-        //     );
-        // }
-
-
+        
         var newMovie = await _movieService.CreateMovie(movie, ct);
+
         return CreatedAtAction(nameof(GetById), new { id = newMovie.Id }, newMovie);
     }
 
@@ -121,13 +113,13 @@ public class MovieController : ControllerBase
     {
         if (id <= 0)
         {
-            return BadRequest();
+            return this.BadRequestProblem("Id must be greater than 0");
         }
         var result = await _movieService.UpdateMovie(id, movie, ct);
 
         if (!result)
         {
-            return NotFound(new { error = "Movie not found" });
+            return this.NotFoundProblem("Movie not found");
         }
 
         return NoContent();
@@ -150,13 +142,13 @@ public class MovieController : ControllerBase
     {
         if (id <= 0)
         {
-            return BadRequest();
+            return this.BadRequestProblem("Id must be greater than 0");
         }
         var result = await _movieService.PartialUpdateMovie(id, movie, ct);
 
         if (!result)
         {
-            return NotFound(new { error = "Movie not found" });
+            return this.NotFoundProblem("Movie not found");
         }
 
         return NoContent();
@@ -174,6 +166,10 @@ public class MovieController : ControllerBase
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     public async Task<IActionResult> Delete(int id, CancellationToken ct)
     {
+        if (id <= 0)
+        {
+            return this.BadRequestProblem("Id must be greater than 0");
+        }
         await _movieService.DeleteMovie(id, ct);
         return NoContent();
     }

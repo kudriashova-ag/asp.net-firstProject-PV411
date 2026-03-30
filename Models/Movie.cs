@@ -10,6 +10,6 @@ public class Movie
     public int? DirectorId { get; set; }
     public Director? Director { get; set; } 
 
-    public IEnumerable<MovieActor> MovieActors { get; set; } = new List<MovieActor>();
+    public ICollection<MovieActor> MovieActors { get; set; } = new List<MovieActor>();
     public IEnumerable<Actor> Actors { get; set; } = new List<Actor>();
 }

@@ -2,7 +2,6 @@ using System.Reflection;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using FluentValidation;
-using FluentValidation.AspNetCore;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
@@ -19,23 +18,23 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
-builder.Services.AddScoped<IMovieService, MovieService>();
-builder.Services.AddScoped<FileService>();
-
-// автоматична реєстрація ВСІХ валідаторів
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
-// автоматична валідація
-// builder.Services.AddFluentValidationAutoValidation();
-
-//builder.Services.AddValidatorsFromAssemblyContaining<CreateMovieRequestValidator>(includeInternalTypes: true);
-
-// обмеження розміру файлів для всього проєкту
 builder.Services.Configure<FormOptions>(options =>
 {
-    options.MultipartBodyLengthLimit = 5 * 1024 * 1024; // 5 MB
+    options.MultipartBodyLengthLimit = 5 * 1024 * 1024;
 });
 
 builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
+builder.Services.AddValidatorsFromAssemblyContaining<CreateMovieRequestValidator>(includeInternalTypes: true);
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+builder.Services.AddScoped<IMovieService, MovieService>();
+builder.Services.AddScoped<IFileService, FileService>(); 
+
+
+builder.Services.AddControllers(options =>
+{
+    options.Filters.Add<ValidationFilter>();
+});
 
 builder.Services.AddApiVersioning(options =>
 {
@@ -49,12 +48,6 @@ builder.Services.AddApiVersioning(options =>
     options.SubstituteApiVersionInUrl = true;
 });
 
-
-builder.Services.AddControllers(options=>
-{
-    options.Filters.Add<ValidationFilter>();
-});
-
 builder.Services.AddSwaggerGen(options =>
 {
     var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
@@ -65,43 +58,49 @@ builder.Services.AddSwaggerGen(options =>
     options.SwaggerDoc("v2", new OpenApiInfo { Title = "My API V2", Version = "v2" });
 });
 
+
+
+
+
 var app = builder.Build();
+
+if (app.Environment.IsDevelopment())
+{
+    app.UseSwagger();
+    app.UseSwaggerUI(options =>
+    {
+
+        var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+        foreach (var description in provider.ApiVersionDescriptions)
+        {
+            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json",
+                                    description.GroupName.ToUpperInvariant());
+        }
+    });
+}
 
 app.UseMiddleware<ExceptionMiddleware>();
 
-// конфігурація для роботи з файлами  (wwwroot->index.html)
-app.UseDefaultFiles(new DefaultFilesOptions
-{
-    DefaultFileNames = new[] { "index.html" }
-});
+app.UseHttpsRedirection();
 
 app.UseStaticFiles(); // wwwroot
-
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(Path.Combine(Directory.GetCurrentDirectory(), "uploads")),
     RequestPath = "/uploads"
 });
 
-
-
-if (app.Environment.IsDevelopment())
+app.UseDefaultFiles(new DefaultFilesOptions
 {
-    app.UseSwagger();
+    DefaultFileNames = new[] { "index.html" }
+});
 
-    app.UseSwaggerUI(options =>
-    {
-        // options.SwaggerEndpoint("/openapi/v1.json", "My API V1");
-        var provider = app.Services.GetRequiredService<IApiVersionDescriptionProvider>();
+app.UseRouting();
 
-        foreach (var description in provider.ApiVersionDescriptions)
-        {
-            options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json",
-                                    description.GroupName.ToUpperInvariant());
-        }
+// app.UseCors();
 
-    });
-}
+// app.UseAuthentication();
+// app.UseAuthorization();
 
 app.MapControllers();
 
@@ -109,6 +108,3 @@ app.MapControllers();
 app.MapFallbackToFile("index.html");
 
 app.Run();
-
-
-

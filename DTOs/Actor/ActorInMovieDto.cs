@@ -1,3 +1,9 @@
 namespace MyApp.DTOs.Actor;
 
-public record ActorInMovieDto(int Id, string FirstName, string LastName, string? Role);
+public class ActorInMovieDto
+{
+    public int Id { get; set; }
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
+    public string? Role { get; set; }
+}

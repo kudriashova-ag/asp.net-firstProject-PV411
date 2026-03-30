@@ -1,6 +1,6 @@
 namespace MyApp.Services;
 
-public class FileService
+public class FileService : IFileService
 {
     private readonly IWebHostEnvironment _env;
     private readonly string _uploadsRoot;

@@ -1,3 +1,10 @@
 namespace MyApp.DTOs.Director;
 
-public record DirectorDto(int Id, string FirstName, string LastName);
+public class DirectorDto
+{
+    public int Id { get; set; }
+    public string FirstName { get; set; } = null!;
+    public string LastName { get; set; } = null!;
+
+    public DirectorDto() { } // ← додай
+}

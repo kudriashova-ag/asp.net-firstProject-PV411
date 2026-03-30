@@ -48,42 +48,63 @@ public class MovieService : IMovieService
           var movieDetail = _mapper.Map<MovieDetailDto>(movie); 
 
           return movieDetail; */
-
         // 2 варіант
-        // return await _db.Movies
-        //         .AsNoTracking()
-        //         .Where(m => m.Id == id)
-        //         .ProjectTo<MovieDetailDto>(_mapper.ConfigurationProvider)
-        //         .FirstOrDefaultAsync(ct);
+        return await _db.Movies
+                .AsNoTracking()
+                .Where(m => m.Id == id)
+                .ProjectTo<MovieDetailDto>(_mapper.ConfigurationProvider)
+                .FirstOrDefaultAsync(ct);
 
         // 3 варіант
-        return await _db.Movies
-              .AsNoTracking()
-              .Where(m => m.Id == id)
-              .Select(m => new MovieDetailDto(
-                      m.Id,
-                      m.Title,
-                      m.Genre,
-                      m.Year,
-                      m.MovieActors.Select(ma =>
-                          new ActorInMovieDto(
-                              ma.Actor.Id,
-                              ma.Actor.FirstName,
-                              ma.Actor.LastName,
-                              ma.Role
-                          ))
-                          .ToList(),
-                      m.Director != null ?
-                          new DirectorDto(m.Director.Id, m.Director.FirstName, m.Director.LastName)
-                          : null
-              ))
-              .FirstOrDefaultAsync(ct);
+
+
+        // return await _db.Movies
+        //       .AsNoTracking()
+        //       .Where(m => m.Id == id)
+        //       .Select(m => new MovieDetailDto(
+        //               m.Id,
+        //               m.Title,
+        //               m.Genre,
+        //               m.Year,
+        //               m.MovieActors.Select(ma =>
+        //                   new ActorInMovieDto(
+        //                       ma.Actor.Id,
+        //                       ma.Actor.FirstName,
+        //                       ma.Actor.LastName,
+        //                       ma.Role
+        //                   ))
+        //                   .ToList(),
+        //               m.Director != null ?
+        //                   new DirectorDto(m.Director.Id, m.Director.FirstName, m.Director.LastName)
+        //                   : null
+        //       ))
+        //       .FirstOrDefaultAsync(ct);
     }
 
     public async Task<MovieDetailDto> CreateMovie(CreateMovieRequest movieRequest, CancellationToken ct)
     {
-        var newMovie = _mapper.Map<Movie>(movieRequest);
+        var newMovie = new Movie
+        {
+            Title = movieRequest.Title,
+            Genre = movieRequest.Genre,
+            Year = movieRequest.Year,
+            DirectorId = movieRequest.DirectorId
+        };
+
+        foreach (var actor in movieRequest.Actors)
+        {
+            var movieActor = new MovieActor
+            {
+                ActorId = actor.ActorId,
+                Role = actor.Role,
+                Movie = newMovie
+            };
+
+            newMovie.MovieActors.Add(movieActor);
+        }
+
         _db.Movies.Add(newMovie);
+
         await _db.SaveChangesAsync(ct);
         var movieDetail = _mapper.Map<MovieDetailDto>(newMovie);
         return movieDetail;
