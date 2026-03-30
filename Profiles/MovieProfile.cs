@@ -18,12 +18,11 @@ public class MovieProfile : Profile
             .ForMember(dest => dest.LastName, opts => opts.MapFrom(src => src.Actor.LastName))
             .ForMember(dest => dest.Role, opts => opts.MapFrom(src => src.Role));
 
+        
+
         CreateMap<Movie, MovieDetailDto>()
             .ForMember(dest => dest.Director, opts => opts.MapFrom(src => src.Director))
-            .ForMember(dest => dest.Actors, opts => opts.MapFrom(src => src.MovieActors))
-        ;
-
-
+            .ForMember(dest => dest.Actors, opts => opts.MapFrom(src => src.MovieActors));
 
         CreateMap<Movie, MovieSummaryDto>();
 

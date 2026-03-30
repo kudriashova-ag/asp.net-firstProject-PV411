@@ -92,9 +92,7 @@ public class MovieController : ControllerBase
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     public async Task<ActionResult<MovieDetailDto>> Create([FromBody] CreateMovieRequest movie, CancellationToken ct)
     {
-        
         var newMovie = await _movieService.CreateMovie(movie, ct);
-
         return CreatedAtAction(nameof(GetById), new { id = newMovie.Id }, newMovie);
     }
 

@@ -4,15 +4,13 @@ using MyApp.DTOs.Director;
 namespace MyApp.DTOs.Movie;
 
 
-public class MovieDetailDto
-{
-    public MovieDetailDto() { } // ← має бути
-  
-
-    public int Id { get; set; }
-    public string Title { get; set; }
-    public string Description { get; set; }
-    public int Year { get; set; }
-    public IEnumerable<ActorInMovieDto> Actors { get; set; }
-    public DirectorDto? Director { get; set; }
-}
+public record MovieDetailDto
+(
+     int Id,
+     string Title,
+     string Description,
+     string Genre,
+     int Year,
+     IEnumerable<ActorInMovieDto> Actors,
+     DirectorDto? Director
+);

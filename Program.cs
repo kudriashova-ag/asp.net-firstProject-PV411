@@ -9,6 +9,7 @@ using Microsoft.OpenApi;
 using MyApp.Data;
 using MyApp.Filters;
 using MyApp.Middleware;
+using MyApp.Repository;
 using MyApp.Services;
 using MyApp.Validators.Movie;
 
@@ -28,7 +29,9 @@ builder.Services.AddValidatorsFromAssemblyContaining<CreateMovieRequestValidator
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddScoped<IMovieService, MovieService>();
-builder.Services.AddScoped<IFileService, FileService>(); 
+builder.Services.AddScoped<IFileService, FileService>();
+
+builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 
 
 builder.Services.AddControllers(options =>
