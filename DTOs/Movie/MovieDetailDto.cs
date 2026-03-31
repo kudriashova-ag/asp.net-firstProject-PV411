@@ -5,12 +5,11 @@ namespace MyApp.DTOs.Movie;
 
 
 public record MovieDetailDto
-(
-     int Id,
-     string Title,
-     string Description,
-     string Genre,
-     int Year,
-     IEnumerable<ActorInMovieDto> Actors,
-     DirectorDto? Director
-);
+{
+    public int Id { get; set; }
+    public string Title { get; set; } = null!;
+    public string Description { get; set; } = null!;
+    public int Year { get; set; }
+    public IEnumerable<ActorInMovieDto> Actors { get; set; } = null!;
+    public DirectorDto? Director { get; set; }
+}
