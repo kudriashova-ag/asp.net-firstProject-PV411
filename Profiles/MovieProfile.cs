@@ -36,8 +36,10 @@ public class MovieProfile : Profile
             .ForMember(dest => dest.MovieActors, opts => opts.Ignore());
 
         CreateMap<UpdateMovieRequest, Movie>()
-             .ForMember(dest => dest.Year, opts => opts.PreCondition((src, dest, srcMember) => src.Year.HasValue))    // !!!!!
-             .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
+            .ForMember(dest => dest.Actors, opts => opts.Ignore())
+            .ForMember(dest => dest.MovieActors, opts => opts.Ignore())
+            .ForMember(dest => dest.Year, opts => opts.PreCondition((src, dest, srcMember) => src.Year.HasValue)) 
+            .ForAllMembers(opts => opts.Condition((src, dest, srcMember) => srcMember != null));
 
 
     }

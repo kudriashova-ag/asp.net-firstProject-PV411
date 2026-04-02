@@ -25,9 +25,9 @@ public class MovieRepository : IMovieRepository
 
     public async Task<Movie?> GetMovieByIdAsync(int id, CancellationToken ct)
     {
-     
+
         return await _db.Movies.
-                        AsNoTracking()   // !!!!!!!
+                        AsNoTracking()
                         .Where(m => m.Id == id)
                         .Include(m => m.Director)
                         .Include(m => m.MovieActors)
@@ -49,9 +49,10 @@ public class MovieRepository : IMovieRepository
                         .FirstOrDefaultAsync(ct);
     }
 
-    public void RemoveMovieActors(ICollection<MovieActor> movieActors)
+    public Task RemoveMovieActors(ICollection<MovieActor> movieActors)
     {
         _db.RemoveRange(movieActors);
+        return Task.CompletedTask;
     }
 
     public async Task SaveChangesAsync(CancellationToken ct)
@@ -59,4 +60,15 @@ public class MovieRepository : IMovieRepository
         await _db.SaveChangesAsync(ct);
     }
 
+    public Task RemoveMovie(Movie movie, CancellationToken ct)
+    {
+        _db.Movies.Remove(movie);
+        return Task.CompletedTask;
+    }
+
+
+    public async Task<bool> DirectorExistsAwait(int? DirectorId, CancellationToken ct)
+    {
+        return await _db.Directors.AnyAsync(d => d.Id == DirectorId, ct);
+    }
 }

@@ -7,19 +7,18 @@ using AutoMapper.QueryableExtensions;
 using MyApp.Helpers.Pagination;
 using MyApp.Helpers.QueryParameters;
 using MyApp.Repository;
+using MyApp.DTOs.Actor;
 
 
 namespace MyApp.Services;
 
 public class MovieService : IMovieService
 {
-    private readonly AppDbContext _db;
     private readonly IMapper _mapper;
     private readonly IMovieRepository _movieRepository;
 
-    public MovieService(AppDbContext db, IMapper mapper, IMovieRepository movieRepository)
+    public MovieService(IMapper mapper, IMovieRepository movieRepository)
     {
-        _db = db;
         _mapper = mapper;
         _movieRepository = movieRepository;
     }
@@ -57,7 +56,7 @@ public class MovieService : IMovieService
         };
 
         await _movieRepository.AddMovieAsync(newMovie, ct);
-        
+
         return (await GetMovieById(newMovie.Id, ct))!;
     }
 
@@ -68,7 +67,7 @@ public class MovieService : IMovieService
 
         _mapper.Map(movieRequest, movieToUpdate);
 
-        _movieRepository.RemoveMovieActors(movieToUpdate.MovieActors);
+        await _movieRepository.RemoveMovieActors(movieToUpdate.MovieActors);
 
         movieToUpdate.MovieActors = movieRequest.Actors.Select(a => new MovieActor
         {
@@ -76,33 +75,47 @@ public class MovieService : IMovieService
             Role = a.Role,
             MovieId = id
         }).ToList();
-        
+
         await _movieRepository.SaveChangesAsync(ct);
         return true;
     }
 
     public async Task<bool> PartialUpdateMovie(int id, UpdateMovieRequest movieRequest, CancellationToken ct)
     {
-        var movieToUpdate = await _db.Movies.FirstOrDefaultAsync(m => m.Id == id, ct);
+        var movieToUpdate = await _movieRepository.GetByIdForUpdateAsync(id, ct);
         if (movieToUpdate == null) return false;
+
         _mapper.Map(movieRequest, movieToUpdate);
-        await _db.SaveChangesAsync(ct);
+
+        if (movieRequest.Actors != null)
+        {
+            movieToUpdate.MovieActors = movieRequest.Actors.Select(a => new MovieActor
+            {
+                ActorId = a.ActorId,
+                Role = a.Role,
+                MovieId = id
+            }).ToList();
+        }
+
+        await _movieRepository.SaveChangesAsync(ct);
         return true;
     }
 
     public async Task<bool> DeleteMovie(int id, CancellationToken ct)
     {
-        var movie = await _db.Movies.FirstOrDefaultAsync(m => m.Id == id, ct);
+        var movie = await _movieRepository.GetByIdForUpdateAsync(id, ct);
         if (movie == null) return false;
-        _db.Movies.Remove(movie);
-        await _db.SaveChangesAsync(ct);
+        await _movieRepository.RemoveMovie(movie, ct);
+        await _movieRepository.SaveChangesAsync(ct);
         return true;
     }
 
 
     public async Task<bool> DirectorExists(int? DirectorId, CancellationToken ct)
     {
-        return await _db.Directors.AnyAsync(d => d.Id == DirectorId, ct);
+        return await _movieRepository.DirectorExistsAwait(DirectorId, ct);
     }
 
+
+  
 }
