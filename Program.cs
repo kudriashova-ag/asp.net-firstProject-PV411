@@ -3,12 +3,14 @@ using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using FluentValidation;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.OpenApi;
 using MyApp.Data;
 using MyApp.Filters;
 using MyApp.Middleware;
+using MyApp.Models;
 using MyApp.Repository;
 using MyApp.Services;
 using MyApp.Validators.Movie;
@@ -19,6 +21,13 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
+builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
+    .AddEntityFrameworkStores<AppDbContext>()
+    .AddDefaultTokenProviders();
+
+
+
+
 builder.Services.Configure<FormOptions>(options =>
 {
     options.MultipartBodyLengthLimit = 5 * 1024 * 1024;
@@ -28,9 +37,11 @@ builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 builder.Services.AddValidatorsFromAssemblyContaining<CreateMovieRequestValidator>(includeInternalTypes: true);
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<RoleService>();
+
 builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IFileService, FileService>();
-
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
 
 
