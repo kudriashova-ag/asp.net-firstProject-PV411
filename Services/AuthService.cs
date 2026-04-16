@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using MyApp.DTOs.Identity;
 using MyApp.Models;
+using Services;
 
 namespace MyApp.Services;
 
@@ -8,12 +9,13 @@ namespace MyApp.Services;
 public class AuthService: IAuthService
 {
     private readonly UserManager<ApplicationUser> _userManager;
-    private readonly SignInManager<ApplicationUser> _signInManager;
+    private readonly TokenService _tokenService;
 
-    public AuthService(UserManager<ApplicationUser> userManager, SignInManager<ApplicationUser> signInManager)
+
+    public AuthService(UserManager<ApplicationUser> userManager, TokenService tokenService)
     {
         _userManager = userManager;
-        _signInManager = signInManager;
+        _tokenService = tokenService;
     }
 
     public async Task<IdentityResult> RegisterAsync(RegisterDto registerDto)
@@ -27,14 +29,17 @@ public class AuthService: IAuthService
         return await _userManager.CreateAsync(user, registerDto.Password);
     }
 
-    public async Task<SignInResult> LoginAsync(LoginDto loginDto)
+    public async Task<string?> LoginAsync(LoginDto loginDto)
     {
-        return await _signInManager.PasswordSignInAsync(
-            loginDto.Email,
-            loginDto.Password,
-            isPersistent: false,
-            lockoutOnFailure: false
-        );
+        var user = await _userManager.FindByEmailAsync(loginDto.Email);
+        if (user == null) return null;
+
+        var isPasswordValid = await _userManager.CheckPasswordAsync(user, loginDto.Password);
+        if (!isPasswordValid) return null;
+
+        var roles = await _userManager.GetRolesAsync(user);
+
+        return _tokenService.GenerateToken(user, roles);
     }
 
 

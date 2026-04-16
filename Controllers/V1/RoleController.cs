@@ -3,12 +3,14 @@ using Microsoft.AspNetCore.Mvc;
 using MyApp.Services;
 using MyApp.DTOs.Identity;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
 
 namespace MyApp.Controllers.V1;
 
 [ApiVersion(1.0)]
+[Authorize]
 [ApiController]
-[Route("api/{version:apiVersion}/[controller]")]
+[Route("api/v{version:apiVersion}/[controller]")]
 public class RoleController : ControllerBase
 {
     private readonly RoleService _roleService;
@@ -18,6 +20,7 @@ public class RoleController : ControllerBase
         _roleService = roleService;
     }
 
+    
     [HttpPost("create")]
     public async Task<IActionResult> CreateRole(RoleDto dto)
     {

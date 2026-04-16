@@ -37,14 +37,15 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IActionResult> Login(LoginDto loginDto)
     {
-        var result = await _authService.LoginAsync(loginDto);
+        var token = await _authService.LoginAsync(loginDto);
 
-        if (result.Succeeded)
-            return Ok(new { message = "Вхід прошов успішно" });
+        if (token == null)
+            return Unauthorized(new
+            {
+                message = "Невірний логін або пароль"
+            });
 
-        return Unauthorized(new
-        {
-            message = "Невірний логін або пароль"
-        });
+
+        return Ok(new { token });
     }
 }

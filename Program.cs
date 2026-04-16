@@ -1,11 +1,14 @@
 using System.Reflection;
+using System.Text;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using FluentValidation;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.FileProviders;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using MyApp.Data;
 using MyApp.Filters;
@@ -14,6 +17,8 @@ using MyApp.Models;
 using MyApp.Repository;
 using MyApp.Services;
 using MyApp.Validators.Movie;
+using Services;
+using Settings;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,9 +26,40 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
 
+var jwtSettings = builder.Configuration
+    .GetSection("JwtSettings")
+    .Get<JwtSettings>()!;
+
+builder.Services.AddSingleton(jwtSettings);
+
+builder.Services.AddScoped<TokenService>();
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuer = true,
+        ValidateAudience = true,
+        ValidateLifetime = true,
+        ValidateIssuerSigningKey = true,
+        ValidIssuer = jwtSettings.Issuer,
+        ValidAudience = jwtSettings.Audience,
+        IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+    };
+});
+
+
+
 builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddEntityFrameworkStores<AppDbContext>()
-    .AddDefaultTokenProviders();
+    .AddDefaultTokenProviders()
+    .AddRoles<IdentityRole>()
+    .AddSignInManager<SignInManager<ApplicationUser>>();
 
 
 
@@ -43,6 +79,8 @@ builder.Services.AddScoped<RoleService>();
 builder.Services.AddScoped<IMovieService, MovieService>();
 builder.Services.AddScoped<IFileService, FileService>();
 builder.Services.AddScoped<IMovieRepository, MovieRepository>();
+
+
 
 
 builder.Services.AddControllers(options =>
@@ -70,6 +108,21 @@ builder.Services.AddSwaggerGen(options =>
     options.EnableAnnotations();
     options.SwaggerDoc("v1", new OpenApiInfo { Title = "My API V1", Version = "v1" });
     options.SwaggerDoc("v2", new OpenApiInfo { Title = "My API V2", Version = "v2" });
+
+    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = SecuritySchemeType.Http,
+        Scheme = "Bearer",
+        In = ParameterLocation.Header,
+        Description = "Введіть токен"
+    });
+
+    options.AddSecurityRequirement(doc => new OpenApiSecurityRequirement
+    {
+        [new OpenApiSecuritySchemeReference("Bearer", doc)] = new List<string>()
+    });
+
 });
 
 
@@ -113,12 +166,12 @@ app.UseRouting();
 
 // app.UseCors();
 
-// app.UseAuthentication();
-// app.UseAuthorization();
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 
 // ловимо всі не знайдені запити та повертаємо index.html
-app.MapFallbackToFile("index.html");
+//app.MapFallbackToFile("index.html");
 
 app.Run();
