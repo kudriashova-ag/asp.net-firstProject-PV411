@@ -1,6 +1,8 @@
 using Asp.Versioning;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MyApp.DTOs.Identity;
+using MyApp.Features.Auth.Commands.Register;
 using MyApp.Services;
 
 namespace MyApp.Controllers.V1;
@@ -12,39 +14,34 @@ namespace MyApp.Controllers.V1;
 
 public class AuthController : ControllerBase
 {
-    private readonly IAuthService _authService;
+    private readonly IMediator _mediator;
 
-    public AuthController(IAuthService authService)
+    public AuthController(IMediator mediator)
     {
-        _authService = authService;
+        _mediator = mediator;
     }
 
     [HttpPost("register")]
-    public async Task<IActionResult> Register(RegisterDto registerDto)
+    public async Task<IActionResult> Register(RegisterCommand command)
     {
-        var result = await _authService.RegisterAsync(registerDto);
+        var result = await _mediator.Send(command, CancellationToken.None);
 
         if (result.Succeeded)
-            return Ok(new { message = "Реєстрація прошла успішно" });
+            return StatusCode(201, "Успішна реєстрація");
 
-        return BadRequest(new
-        {
-            message = "Помилка реєстрації",
-            errors = result.Errors
-        });
+        return BadRequest(result.Errors);
     }
 
     [HttpPost("login")]
-    public async Task<IActionResult> Login(LoginDto loginDto)
+    public async Task<IActionResult> Login(LoginCommand command)
     {
-        var token = await _authService.LoginAsync(loginDto);
+        var token = await _mediator.Send(command, CancellationToken.None);
 
         if (token == null)
             return Unauthorized(new
             {
                 message = "Невірний логін або пароль"
             });
-
 
         return Ok(new { token });
     }

@@ -1,7 +1,9 @@
 using Asp.Versioning;
+using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MyApp.DTOs.Movie;
 using MyApp.Extensions;
+using MyApp.Features.Movies.Queries.GetAllMovies;
 using MyApp.Helpers.Pagination;
 using MyApp.Helpers.QueryParameters;
 using MyApp.Services;
@@ -23,11 +25,13 @@ public class MovieController : ControllerBase
 
     private readonly IMovieService _movieService;
     private readonly CreateMovieRequestValidator _createMovieValidator;
+    private readonly IMediator _mediator;
 
-    public MovieController(IMovieService movieService, CreateMovieRequestValidator createMovieValidator)
+    public MovieController(IMovieService movieService, CreateMovieRequestValidator createMovieValidator, IMediator mediator)
     {
         _movieService = movieService;
         _createMovieValidator = createMovieValidator;
+        _mediator = mediator;
     }
 
 
@@ -42,7 +46,7 @@ public class MovieController : ControllerBase
 
     public async Task<ActionResult<PagedResult<MovieSummaryDto>>> Get(CancellationToken ct, [FromQuery] MovieQueryParameters parameters)
     {
-        var movieSummary = await _movieService.GetAllMovies(ct, parameters);
+        var movieSummary = await _mediator.Send(new GetAllMoviesQuery(parameters), ct);
         return Ok(movieSummary);
     }
 

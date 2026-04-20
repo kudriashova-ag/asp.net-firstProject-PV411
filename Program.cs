@@ -3,6 +3,7 @@ using System.Text;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using FluentValidation;
+using MediatR;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Http.Features;
 using Microsoft.AspNetCore.Identity;
@@ -19,6 +20,7 @@ using MyApp.Services;
 using MyApp.Validators.Movie;
 using Services;
 using Settings;
+using MyApp.Behaviours;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -60,6 +62,13 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
     .AddDefaultTokenProviders()
     .AddRoles<IdentityRole>()
     .AddSignInManager<SignInManager<ApplicationUser>>();
+
+
+builder.Services.AddMediatR(cfg =>
+{
+    cfg.RegisterServicesFromAssemblyContaining<Program>();
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
+});
 
 
 

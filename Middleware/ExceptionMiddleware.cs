@@ -1,3 +1,4 @@
+using System.ComponentModel.DataAnnotations;
 using System.Text.Json;                          // Для серіалізації об'єкта ProblemDetails у JSON
 using Microsoft.AspNetCore.Mvc;                  // Потрібно для класу ProblemDetails
 
@@ -51,6 +52,7 @@ public class ExceptionMiddleware
         // Визначаємо HTTP-статус код залежно від типу винятку
         context.Response.StatusCode = exception switch
         {
+            ValidationException => StatusCodes.Status400BadRequest,
             // Бізнес-логічні помилки та помилки аргументів → 400 Bad Request
             ArgumentException or InvalidOperationException => StatusCodes.Status400BadRequest,
 
@@ -70,6 +72,7 @@ public class ExceptionMiddleware
             // Заголовок помилки (Title) — короткий опис проблеми
             Title = exception switch
             {
+                ValidationException => "Bad Request",
                 ArgumentException => "Bad Request",
                 KeyNotFoundException => "Not Found",
                 _ => "Internal Server Error"
