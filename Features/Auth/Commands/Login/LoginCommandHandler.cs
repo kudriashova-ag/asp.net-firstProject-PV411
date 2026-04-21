@@ -6,21 +6,19 @@ using Services;
 namespace MyApp.Features.Auth.Commands.Register;
 
 
-public class LoginCommandHandler : IRequestHandler<LoginCommand, string?>
+public class LoginCommandHandler(
+    UserManager<ApplicationUser> _userManager,
+    TokenService _tokenService,
+    ILogger<LoginCommandHandler> _logger
+    ) : IRequestHandler<LoginCommand, string?>
 {
-    private readonly UserManager<ApplicationUser> _userManager;
-    private readonly TokenService _tokenService;
-
-    public LoginCommandHandler(UserManager<ApplicationUser> userManager, TokenService tokenService)
-    {
-        _userManager = userManager;
-        _tokenService = tokenService;
-    }
 
     public async Task<string?> Handle(LoginCommand request, CancellationToken ct)
     {
         var user = await _userManager.FindByEmailAsync(request.Email);
         if (user == null) return null;
+
+        _logger.LogInformation($"User {user.UserName} with ID {user.Id} logged in");
 
         var isPasswordValid = await _userManager.CheckPasswordAsync(user, request.Password);
         if (!isPasswordValid) return null;

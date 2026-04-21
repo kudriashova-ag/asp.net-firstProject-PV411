@@ -21,6 +21,7 @@ using MyApp.Validators.Movie;
 using Services;
 using Settings;
 using MyApp.Behaviours;
+using Serilog;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -68,10 +69,13 @@ builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssemblyContaining<Program>();
     cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 });
 
 
-
+builder.Host.UseSerilog((context, cfg) => 
+    cfg.ReadFrom.Configuration(context.Configuration)
+);
 
 builder.Services.Configure<FormOptions>(options =>
 {
