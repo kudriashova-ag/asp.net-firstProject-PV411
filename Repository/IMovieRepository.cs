@@ -15,4 +15,6 @@ public interface IMovieRepository
     void RemoveMovieActors(ICollection<MovieActor> movieActors);
 
     Task SaveChangesAsync(CancellationToken ct);
+
+    Task <bool> DirectorExists(int? DirectorId, CancellationToken ct);
 }

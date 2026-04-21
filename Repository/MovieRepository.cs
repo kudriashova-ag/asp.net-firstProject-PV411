@@ -58,4 +58,9 @@ public class MovieRepository : IMovieRepository
         await _db.SaveChangesAsync(ct);
     }
 
+    public async Task<bool> DirectorExists(int? DirectorId, CancellationToken ct)
+    {
+        return await _db.Directors.AnyAsync(d => d.Id == DirectorId, ct);
+    }
+
 }

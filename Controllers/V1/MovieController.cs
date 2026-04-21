@@ -3,6 +3,7 @@ using MediatR;
 using Microsoft.AspNetCore.Mvc;
 using MyApp.DTOs.Movie;
 using MyApp.Extensions;
+using MyApp.Features.Movies.Commands;
 using MyApp.Features.Movies.Queries.GetAllMovies;
 using MyApp.Helpers.Pagination;
 using MyApp.Helpers.QueryParameters;
@@ -87,16 +88,16 @@ public class MovieController : ControllerBase
     /// <summary>
     /// Створює новий фільм
     /// </summary>
-    /// <param name="movie"> Об'єкт Movie </param>
+    /// <param name="command"> Об'єкт Movie </param>
     /// <param name="ct">CancellationToken</param>
     /// <returns> Об'єкт Movie </returns>
     [HttpPost]
     [ProducesResponseType(StatusCodes.Status409Conflict)]
     [ProducesResponseType(StatusCodes.Status201Created)]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
-    public async Task<ActionResult<MovieDetailDto>> Create([FromBody] CreateMovieRequest movie, CancellationToken ct)
+    public async Task<ActionResult<MovieDetailDto>> Create([FromBody] CreateMovieCommand command, CancellationToken ct)
     {
-        var newMovie = await _movieService.CreateMovie(movie, ct);
+        var newMovie = await _mediator.Send(command, ct);
         return CreatedAtAction(nameof(GetById), new { id = newMovie.Id }, newMovie);
     }
 
@@ -104,20 +105,17 @@ public class MovieController : ControllerBase
     /// Оновлює фільм
     /// </summary>
     /// <param name="id"> Ідентифікатор фільму</param>
-    /// <param name="movie"> Об'єкт Movie</param>
+    /// <param name="command"> Об'єкт Movie</param>
     /// <param name="ct">CancellationToken</param>
     /// <returns> 204 NoContent або помилка</returns>
     [HttpPut("{id:int}")]
     [ProducesResponseType(StatusCodes.Status400BadRequest)]
     [ProducesResponseType(StatusCodes.Status404NotFound)]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
-    public async Task<IActionResult> Update(int id, [FromBody] CreateMovieRequest movie, CancellationToken ct)
+    public async Task<IActionResult> Update(int id, [FromBody] CreateMovieCommand command, CancellationToken ct)
     {
-        if (id <= 0)
-        {
-            return this.BadRequestProblem("Id must be greater than 0");
-        }
-        var result = await _movieService.UpdateMovie(id, movie, ct);
+        
+        var result = await _mediator.Send(new UpdateMovieCommand(id, command), ct);
 
         if (!result)
         {

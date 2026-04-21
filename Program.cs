@@ -86,7 +86,6 @@ builder.Services.AddAutoMapper(cfg => { }, typeof(Program));
 builder.Services.AddValidatorsFromAssemblyContaining<CreateMovieRequestValidator>(includeInternalTypes: true);
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
-builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<RoleService>();
 
 builder.Services.AddScoped<IMovieService, MovieService>();
