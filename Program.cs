@@ -22,12 +22,16 @@ using Services;
 using Settings;
 using MyApp.Behaviours;
 using Serilog;
+using Ganss.Xss;
+using MyApp.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection"))
 );
+
+builder.Services.AddRateLimitingConfiguration();
 
 var jwtSettings = builder.Configuration
     .GetSection("JwtSettings")
@@ -68,12 +72,21 @@ builder.Services.AddIdentity<ApplicationUser, IdentityRole>()
 builder.Services.AddMediatR(cfg =>
 {
     cfg.RegisterServicesFromAssemblyContaining<Program>();
+    cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(SanitizationBehaviour<,>));
     cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(ValidationBehaviour<,>));
     cfg.AddBehavior(typeof(IPipelineBehavior<,>), typeof(LoggingBehavior<,>));
 });
 
 
-builder.Host.UseSerilog((context, cfg) => 
+builder.Services.AddSingleton<IHtmlSanitizer>(_ =>
+        {
+            var sanitizer = new HtmlSanitizer();
+            sanitizer.AllowedTags.Clear();
+            sanitizer.AllowedTags.UnionWith(new[] { "b" });
+            return sanitizer;
+        });
+
+builder.Host.UseSerilog((context, cfg) =>
     cfg.ReadFrom.Configuration(context.Configuration)
 );
 
@@ -176,10 +189,11 @@ app.UseDefaultFiles(new DefaultFilesOptions
 
 app.UseRouting();
 
-// app.UseCors();
+app.UseCors();
 
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseRateLimiter();
 
 app.MapControllers();
 

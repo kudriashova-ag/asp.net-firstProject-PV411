@@ -7,7 +7,7 @@ using MyApp.Repository;
 namespace MyApp.Features.Movies.Commands;
 
 public class UpdateMovieHandler(
-    IMapper _mapper,
+    
     IMovieRepository _movieRepository)
     : IRequestHandler<UpdateMovieCommand, bool>
 {

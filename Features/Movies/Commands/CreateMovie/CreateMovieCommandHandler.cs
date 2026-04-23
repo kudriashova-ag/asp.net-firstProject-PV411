@@ -29,6 +29,7 @@ public class CreateMovieHandler(
 
         await _movieRepository.AddMovieAsync(newMovie, ct);
         var created = await _movieRepository.GetMovieByIdAsync(newMovie.Id, ct);
+        
         return _mapper.Map<MovieDetailDto>(created);
     }
 
