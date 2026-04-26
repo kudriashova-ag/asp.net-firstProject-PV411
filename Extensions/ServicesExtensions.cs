@@ -20,15 +20,6 @@ public static class ServicesExtensions
             return sanitizer;
         });
 
-        services.AddAntiforgery(options =>
-        {
-            options.HeaderName = "X-CSRF-Token";
-            options.Cookie.Name = "CSRF-TOKEN";
-            options.Cookie.HttpOnly = false;
-            options.Cookie.SecurePolicy = CookieSecurePolicy.Always;
-            options.Cookie.SameSite = SameSiteMode.Strict;
-        });
-
         services.Configure<FormOptions>(options =>
         {
             options.MultipartBodyLengthLimit = 5 * 1024 * 1024;
@@ -42,7 +33,6 @@ public static class ServicesExtensions
         services.AddValidatorsFromAssemblyContaining<CreateMovieRequestValidator>(includeInternalTypes: true);
         services.AddValidatorsFromAssemblyContaining<Program>();
 
-        //services.AddScoped<ISanitizerService, SanitizerService>();
         services.AddScoped<RoleService>();
         services.AddScoped<IMovieService, MovieService>();
         services.AddScoped<IFileService, FileService>();
