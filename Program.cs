@@ -4,6 +4,7 @@ using Microsoft.Extensions.FileProviders;
 using MyApp.Middleware;
 using Serilog;
 using MyApp.Extensions;
+using MyApp.Services;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -13,8 +14,25 @@ builder.Services.AddMediatRConfiguration();
 builder.Services.AddApplicationServices(builder.Configuration);
 builder.Services.AddSwaggerConfiguration();
 builder.Services.AddRateLimitingConfiguration();
-
 //builder.Services.AddCorsConfiguration(builder.Configuration);
+
+builder.Services.AddHttpClient<IWeatherClient, WeatherClient>(client =>
+{
+    client.BaseAddress = new Uri(builder.Configuration["WeatherApi:BaseUrl"]!);
+    client.Timeout = TimeSpan.FromSeconds(10);
+})
+.AddStandardResilienceHandler();
+
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("FrontendPolicy", policy =>
+    {
+        policy.WithOrigins(["http://127.0.0.1:5500"])
+            .AllowAnyHeader()
+            .AllowAnyMethod();
+    });
+});
+
 
 builder.Host.UseSerilog((context, cfg) =>
     cfg.ReadFrom.Configuration(context.Configuration)
@@ -68,7 +86,7 @@ app.UseDefaultFiles(new DefaultFilesOptions
 
 app.UseRouting();
 
-app.UseCors();
+app.UseCors("FrontendPolicy");
 
 app.UseAuthentication();
 app.UseAuthorization();

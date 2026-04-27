@@ -1,9 +1,8 @@
 using Asp.Versioning;
 using MediatR;
 using Microsoft.AspNetCore.Mvc;
-using MyApp.DTOs.Identity;
+using Microsoft.AspNetCore.RateLimiting;
 using MyApp.Features.Auth.Commands.Register;
-using MyApp.Services;
 
 namespace MyApp.Controllers.V1;
 
@@ -11,7 +10,7 @@ namespace MyApp.Controllers.V1;
 [ApiController]
 [Produces("application/json")]
 [Route("api/v{version:apiVersion}/[controller]")]
-
+[EnableRateLimiting("auth")]
 public class AuthController : ControllerBase
 {
     private readonly IMediator _mediator;

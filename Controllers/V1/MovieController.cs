@@ -5,6 +5,7 @@ using MyApp.DTOs.Movie;
 using MyApp.Extensions;
 using MyApp.Features.Movies.Commands;
 using MyApp.Features.Movies.Queries.GetAllMovies;
+using MyApp.Features.Weather.DTO;
 using MyApp.Helpers.Pagination;
 using MyApp.Helpers.QueryParameters;
 using MyApp.Services;
@@ -27,12 +28,14 @@ public class MovieController : ControllerBase
     private readonly IMovieService _movieService;
     private readonly CreateMovieRequestValidator _createMovieValidator;
     private readonly IMediator _mediator;
+    private readonly IWeatherClient _weatherClient;
 
-    public MovieController(IMovieService movieService, CreateMovieRequestValidator createMovieValidator, IMediator mediator)
+    public MovieController(IMovieService movieService, CreateMovieRequestValidator createMovieValidator, IMediator mediator, IWeatherClient weatherClient)
     {
         _movieService = movieService;
         _createMovieValidator = createMovieValidator;
         _mediator = mediator;
+        _weatherClient = weatherClient;
     }
 
 

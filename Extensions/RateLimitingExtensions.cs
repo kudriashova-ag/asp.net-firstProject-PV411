@@ -18,7 +18,7 @@ public static class RateLimitingExtensions
                     RateLimitPartition.GetFixedWindowLimiter("global", _ => new FixedWindowRateLimiterOptions
                     {
                         Window = TimeSpan.FromSeconds(1),
-                        PermitLimit = 10,
+                        PermitLimit = 1000,
                         QueueLimit = 0
                     })
                 ),
@@ -31,7 +31,7 @@ public static class RateLimitingExtensions
                     return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
                     {
                         Window = TimeSpan.FromSeconds(10),
-                        PermitLimit = 5,
+                        PermitLimit = 10,
                         QueueLimit = 0
                     });
                 })
@@ -44,7 +44,7 @@ public static class RateLimitingExtensions
                 return RateLimitPartition.GetFixedWindowLimiter(key, _ => new FixedWindowRateLimiterOptions
                 {
                     Window = TimeSpan.FromMinutes(1),
-                    PermitLimit = 5,
+                    PermitLimit = 50,
                     QueueLimit = 0
                 });
             });
